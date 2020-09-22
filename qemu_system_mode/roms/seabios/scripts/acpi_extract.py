@@ -73,7 +73,7 @@ def add_aml(offset, line):
         die("Offset 0x%x != 0x%x" % (o, len(aml)))
     # Strip any trailing dots and ASCII dump after "
     line = re.sub(r'\s*\.*\s*".*$', "", line)
-    # Strip traling whitespace
+    # Strip trailing whitespace
     line = re.sub(r'\s+$', "", line)
     # Strip leading whitespace
     line = re.sub(r'^\s+', "", line)

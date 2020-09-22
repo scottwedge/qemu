@@ -457,7 +457,7 @@ class TestFunctional(unittest.TestCase):
         self.assertEqual(self._builder.fail, 0)
 
     def testCount(self):
-        """Test building a specific number of commitst"""
+        """Test building a specific number of commits"""
         self._RunControl('-b', TEST_BRANCH, '-c2')
         self.assertEqual(self._builder.count, 2 * len(boards))
         self.assertEqual(self._builder.fail, 0)

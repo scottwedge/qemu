@@ -1692,7 +1692,7 @@ NOTE: Bugs now will have an entry into the Source Forge bug tracking
   fragments in the last group that were larger than the maximum 
   fragment
 04/11/03: Bug Fix: 'ffs' allows the image to not be a multiple of the
-  block size.  A read error occured when it tried to read the last
+  block size.  A read error occurred when it tried to read the last
   fragments since a whole block could not be read.
 04/15/03: Update: Added debug statements to FAT code.
 04/26/03: Update: Added verbose statements to FAT code
@@ -1829,7 +1829,7 @@ NOTE: Bugs now will have an entry into the Source Forge bug tracking
   values from on-disk buffers
 09/19/02: Bug Fix: fixed memory leak in ntfs_load_ver() 
 09/19/02: Bug Fix: Update sequence errors were displayed because of a
-  bug that occured when an MFT entry crossed a run in $MFT.  Only occured
+  bug that occurred when an MFT entry crossed a run in $MFT.  Only occurred
   with 512-byte clusters and an odd number of clusters in a run.
 09/19/02: Update: New argument to ils, istat, and fls that allows user to
   specify a time skew in seconds of the compromised system.  Originated

@@ -99,7 +99,7 @@ def move_to_topdir():
     # strip '\n'
     toplevel = toplevel.rstrip()
 
-    # Change the current working directory to the toplevel of the respository
+    # Change the current working directory to the toplevel of the repository
     # for our easier life.
     os.chdir(toplevel)
 

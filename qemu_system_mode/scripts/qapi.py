@@ -126,7 +126,7 @@ class QAPIDoc(object):
         # self.parser is used to report errors with QAPIParseError.  The
         # resulting error position depends on the state of the parser.
         # It happens to be the beginning of the comment.  More or less
-        # servicable, but action at a distance.
+        # serviceable, but action at a distance.
         self.parser = parser
         self.info = info
         self.symbol = None

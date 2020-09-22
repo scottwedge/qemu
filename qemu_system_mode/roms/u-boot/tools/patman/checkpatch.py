@@ -26,7 +26,7 @@ def FindCheckPatch():
         if os.path.isfile(fname):
             return fname
 
-    # Look upwwards for a Chrome OS tree
+    # Look upwards for a Chrome OS tree
     while not os.path.ismount(path):
         fname = os.path.join(path, 'src', 'third_party', 'kernel', 'files',
                 'scripts', 'checkpatch.pl')

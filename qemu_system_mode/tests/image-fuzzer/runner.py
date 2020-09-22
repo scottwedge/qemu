@@ -312,7 +312,7 @@ if __name__ == '__main__':
         Values for $off and $len will be generated based on the virtual disk
         size of the fuzzed image.
 
-        Paths to 'qemu-img' and 'qemu-io' are retrevied from 'QEMU_IMG' and
+        Paths to 'qemu-img' and 'qemu-io' are retrieved from 'QEMU_IMG' and
         'QEMU_IO' environment variables.
 
         '--config' accepts a JSON array of fields to be fuzzed, e.g.

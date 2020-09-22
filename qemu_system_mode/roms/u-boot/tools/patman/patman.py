@@ -60,7 +60,7 @@ parser.add_option('--no-check', action='store_false', dest='check_patch',
                   default=True,
                   help="Don't check for patch compliance")
 parser.add_option('--no-tags', action='store_false', dest='process_tags',
-                  default=True, help="Don't process subject tags as aliaes")
+                  default=True, help="Don't process subject tags as aliases")
 parser.add_option('-T', '--thread', action='store_true', dest='thread',
                   default=False, help='Create patches as a single thread')
 

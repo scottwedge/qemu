@@ -158,9 +158,9 @@ class Builder:
         toolchains: Toolchains object to use for building
         upto: Current commit number we are building (0.count-1)
         warned: Number of builds that produced at least one warning
-        force_reconfig: Reconfigure U-Boot on each comiit. This disables
+        force_reconfig: Reconfigure U-Boot on each commit. This disables
             incremental building, where buildman reconfigures on the first
-            commit for a baord, and then just does an incremental build for
+            commit for a board, and then just does an incremental build for
             the following commits. In fact buildman will reconfigure and
             retry for any failing commits, so generally the only effect of
             this option is to slow things down.
@@ -907,7 +907,7 @@ class Builder:
 
         The summary takes the form of one line per architecture. The
         line contains deltas for each of the sections (+ means the section
-        got bigger, - means smaller). The nunmbers are the average number
+        got bigger, - means smaller). The numbers are the average number
         of bytes that a board in this section increased by.
 
         For example:

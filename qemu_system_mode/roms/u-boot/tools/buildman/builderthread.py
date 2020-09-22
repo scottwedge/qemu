@@ -47,7 +47,7 @@ class ResultThread(threading.Thread):
     """This thread processes results from builder threads.
 
     It simply passes the results on to the builder. There is only one
-    result thread, and this helps to serialise the build output.
+    result thread, and this helps to serialize the build output.
     """
     def __init__(self, builder):
         """Set up a new result thread
@@ -124,7 +124,7 @@ class BuilderThread(threading.Thread):
             do_config: True to run a make <board>_defconfig on the source
             config_only: Only configure the source, do not build it
             force_build: Force a build even if one was previously done
-            force_build_failures: Force a bulid if the previous result showed
+            force_build_failures: Force a build if the previous result showed
                 failure
 
         Returns:
@@ -132,7 +132,7 @@ class BuilderThread(threading.Thread):
                 - CommandResult object containing the results of the build
                 - boolean indicating whether 'make config' is still needed
         """
-        # Create a default result - it will be overwritte by the call to
+        # Create a default result - it will be overwritten by the call to
         # self.Make() below, in the event that we do a build.
         result = command.CommandResult()
         result.return_code = 0

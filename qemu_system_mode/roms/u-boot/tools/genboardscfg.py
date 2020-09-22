@@ -129,7 +129,7 @@ class KconfigScanner:
     def __del__(self):
         """Delete a leftover temporary file before exit.
 
-        The scan() method of this class creates a temporay file and deletes
+        The scan() method of this class creates a temporary file and deletes
         it on success.  If scan() method throws an exception on the way,
         the temporary file might be left over.  In that case, it should be
         deleted in this destructor.
@@ -252,7 +252,7 @@ def scan_defconfigs(jobs=1):
     # The resulting data should be accumulated to this list
     params_list = []
 
-    # Data in the queues should be retrieved preriodically.
+    # Data in the queues should be retrieved periodically.
     # Otherwise, the queues would become full and subprocesses would get stuck.
     while any([p.is_alive() for p in processes]):
         read_queues(queues, params_list)

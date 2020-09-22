@@ -317,7 +317,7 @@ def color_text(color_enabled, color, string):
         return string
 
 def show_diff(a, b, file_path, color_enabled):
-    """Show unidified diff.
+    """Show unidentified diff.
 
     Arguments:
       a: A list of lines (before)
@@ -750,7 +750,7 @@ class KconfigParser:
           autoconf_lines: lines from the include/autoconf.mk file.
 
         Returns:
-          A tupple of the action for this defconfig and the line
+          A tuple of the action for this defconfig and the line
           matched for the config.
         """
         not_set = '# %s is not set' % config
@@ -798,7 +798,7 @@ class KconfigParser:
         Returns:
           Return a tuple of (updated flag, log string).
           The "updated flag" is True if the .config was updated, False
-          otherwise.  The "log string" shows what happend to the .config.
+          otherwise.  The "log string" shows what happened to the .config.
         """
 
         results = []

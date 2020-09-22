@@ -67,7 +67,7 @@ blinking amber
   No ethaddr set. Use the `Rescue Mode` to set one.
 
 blinking red
-  Something bad happend during loading the operating system.
+  Something bad happened during loading the operating system.
 
 The default behavior of the linux kernel is to turn on the blue LED. So if
 the blinking blue LED changes to solid blue the kernel was loaded

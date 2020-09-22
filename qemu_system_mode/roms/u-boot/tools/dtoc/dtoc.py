@@ -68,7 +68,7 @@ class DtbPlatdata:
     """Provide a means to convert device tree binary data to platform data
 
     The output of this process is C structures which can be used in space-
-    constrained encvironments where the ~3KB code overhead of device tree
+    constrained environments where the ~3KB code overhead of device tree
     code is not affordable.
 
     Properties:

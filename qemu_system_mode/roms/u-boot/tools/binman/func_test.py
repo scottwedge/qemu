@@ -211,7 +211,7 @@ class TestFunctional(unittest.TestCase):
         """Create a new test input file, creating directories as needed
 
         Args:
-            fname: Filenaem to create
+            fname: Filename to create
             contents: File contents to write in to the file
         Returns:
             Full pathname of file created
@@ -528,7 +528,7 @@ class TestFunctional(unittest.TestCase):
         self.assertEqual(7, image._size)
 
     def testPackImageSizeAlign(self):
-        """Test that image size alignemnt works as expected"""
+        """Test that image size alignment works as expected"""
         retcode = self._DoTestFile('18_pack_image_align.dts')
         self.assertEqual(0, retcode)
         self.assertIn('image', control.images)

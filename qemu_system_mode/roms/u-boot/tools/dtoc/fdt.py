@@ -75,7 +75,7 @@ class Prop:
 
         He we want to use an int array for 'value'. The first property
         suggests that a single int is enough, but the second one shows that
-        it is not. Calling this function with these two propertes would
+        it is not. Calling this function with these two properties would
         update the current property to be like the second, since it is less
         specific.
         """

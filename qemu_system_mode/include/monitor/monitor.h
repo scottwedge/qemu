@@ -46,4 +46,18 @@ int monitor_fdset_dup_fd_add(int64_t fdset_id, int dup_fd);
 void monitor_fdset_dup_fd_remove(int dup_fd);
 int monitor_fdset_dup_fd_find(int dup_fd);
 
+typedef struct mon_cmd_t {
+    const char *name;
+    const char *args_type;
+    const char *params;
+    const char *help;
+    void (*cmd)(Monitor *mon, const QDict *qdict);
+    /* @sub_table is a list of 2nd level of commands. If it does not exist,
+     * cmd should be used. If it exists, sub_table[?].cmd should be
+     * used, and cmd of 1st level plays the role of help function.
+     */
+    struct mon_cmd_t *sub_table;
+    void (*command_completion)(ReadLineState *rs, int nb_args, const char *str);
+} mon_cmd_t;
+
 #endif /* MONITOR_H */

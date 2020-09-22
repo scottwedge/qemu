@@ -275,6 +275,16 @@ unset target_list
 # Distributions want to ensure that several features are compiled in, and it
 # is impossible without a --enable-foo that exits if a feature is not found.
 
+
+#AWH - LLVM support disabled by default
+tcg_llvm="no"
+#AWH - VMI enabled by default
+enable_vmi="yes"
+#AWH - TCG tainting off by default
+tcg_taint="no"
+#AWH - TCG IR logging off by default
+tcg_ir_log="no"
+
 bluez=""
 brlapi=""
 curl=""
@@ -488,11 +498,19 @@ QEMU_CFLAGS="-fno-strict-aliasing -fno-common -fwrapv $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wall -Wundef -Wwrite-strings -Wmissing-prototypes $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wstrict-prototypes -Wredundant-decls $QEMU_CFLAGS"
 QEMU_CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $QEMU_CFLAGS"
-QEMU_INCLUDES="-I. -I\$(SRC_PATH) -I\$(SRC_PATH)/accel/tcg -I\$(SRC_PATH)/include"
+# AWH - C++ specific flags
+QEMU_CXXFLAGS="-fpermissive -fno-strict-aliasing -Wall -Wundef -Wwrite-strings -Wredundant-decls -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_FORTIFY_SOURCE=2"
+
+
+QEMU_INCLUDES="-I. -I\$(SRC_PATH) -I\$(SRC_PATH)/accel/tcg -I\$(SRC_PATH)/include -I\$(SRC_PATH)include/fpu -I\$(SRC_PATH)/shared/sleuthkit -I\$(SRC_PATH)/shared"
+
 if test "$debug_info" = "yes"; then
     CFLAGS="-g $CFLAGS"
     LDFLAGS="-g $LDFLAGS"
 fi
+
+# AWH - Adding -rdynamic to export QEMU global variables out to the plugins
+LDFLAGS="-rdynamic $LDFLAGS"
 
 # make source path absolute
 source_path=$(cd "$source_path"; pwd)
@@ -827,7 +845,7 @@ if test "$mingw32" = "yes" ; then
   libs_qga="-lws2_32 -lwinmm -lpowrprof -lwtsapi32 -liphlpapi -lnetapi32 $libs_qga"
 fi
 
-werror=""
+werror="no"
 
 for opt do
   optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
@@ -1291,6 +1309,26 @@ for opt do
           error_exit "vhost-user isn't available on win32"
       fi
   ;;
+  # AWH - TCG tainting
+  --enable-tcg-taint) tcg_taint="yes"
+  ;;
+  --disable-tcg-taint) tcg_taint="no"
+  ;;
+  # AWH - TCG IR logging
+  --enable-tcg-ir-log) tcg_ir_log="yes"
+  ;;
+  --disable-tcg-ir-log) tcg_ir_log="no"
+  ;;
+  # AWH - TCG LLVM support
+  --enable-tcg-llvm) tcg_llvm="yes"
+  ;;
+  --disable-tcg-llvm) tcg_llvm="no"
+  ;;
+  # AWH - VMI support
+  --enable-vmi) enable_vmi="yes"
+  ;;
+  --disable-vmi) enable_vmi="no"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -1363,7 +1401,7 @@ if [ "$ARCH" = "unknown" ]; then
   linux_user="no"
 fi
 
-default_target_list=""
+
 
 mak_wilds=""
 
@@ -1380,6 +1418,8 @@ fi
 for config in $mak_wilds; do
     default_target_list="${default_target_list} $(basename "$config" .mak)"
 done
+
+#default_target_list="i386-softmmu"
 
 # Enumerate public trace backends for --help output
 trace_backend_list=$(echo $(grep -le '^PUBLIC = True$' "$source_path"/scripts/tracetool/backend/*.py | sed -e 's/^.*\/\(.*\)\.py$/\1/'))
@@ -1608,6 +1648,10 @@ gcc_flags="-Wno-string-plus-int $gcc_flags"
 # to -Werror this would just silently disable some features,
 # so it's too error prone.
 
+# AWH - CPP flags
+cpp_flags="-Wtype-limits -Wformat-security -Wformat-y2k -Winit-self -Wignored-qualifiers -Wmissing-include-dirs -Wempty-body -fstack-protector-all -Wendif-labels"
+
+
 cc_has_warning_flag() {
     write_c_skeleton;
 
@@ -1621,6 +1665,13 @@ cc_has_warning_flag() {
 for flag in $gcc_flags; do
     if cc_has_warning_flag $flag ; then
         QEMU_CFLAGS="$QEMU_CFLAGS $flag"
+    fi
+done
+
+# AWH - CPP flags
+for flag in $cpp_flags; do
+    if compile_prog "$flag -Werror" "" ; then
+        QEMU_CXXFLAGS="$QEMU_CXXFLAGS $flag"
     fi
 done
 
@@ -4213,6 +4264,19 @@ if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
     libs_softmmu="-lutil $libs_softmmu"
 fi
 
+# AWH - Check if we need libbfd
+#cat > $TMPC <<EOF
+##include <bfd.h>
+#int main(void) { bfd_error my_error; my_error = bfd_get_error(); }
+#EOF
+
+#if compile_prog "" "" ; then
+#  :
+#elif compile_prog "" "-lbfd" ; then
+#  LIBS="-lbfd $LIBS"
+#fi
+LIBS="\$(SRC_PATH)/shared/sleuthkit/lib/libtsk.a -lbfd $LIBS"
+
 ##########################################
 # spice probe
 if test "$spice" != "no" ; then
@@ -4977,7 +5041,7 @@ int main(void) {
 }
 EOF
 if compile_prog "" "" ; then
-    have_static_assert=yes
+    have_static_assert=no
 fi
 
 ##########################################
@@ -5407,6 +5471,14 @@ echo "jemalloc support  $jemalloc"
 echo "avx2 optimization $avx2_opt"
 echo "replication support $replication"
 echo "VxHS block device $vxhs"
+# AWH - TCG tainting
+echo "enable TCG taint  $tcg_taint"
+# AWH - TCG IR logging
+echo "enable IR logging $tcg_ir_log"
+#AWH - TCG LLVM
+echo "enable TCG LLVM   $tcg_llvm"
+# AWH - VMI
+echo "enable VMI        $enable_vmi"
 
 if test "$sdl_too_old" = "yes"; then
 echo "-> Your SDL version is too old - please upgrade to have SDL support"
@@ -5466,6 +5538,23 @@ echo "extra_cxxflags=$EXTRA_CXXFLAGS" >> $config_host_mak
 echo "extra_ldflags=$EXTRA_LDFLAGS" >> $config_host_mak
 echo "qemu_localedir=$qemu_localedir" >> $config_host_mak
 echo "libs_softmmu=$libs_softmmu" >> $config_host_mak
+
+#AWH - VMI enable
+if test "$enable_vmi" = "yes" ; then
+  echo "CONFIG_VMI_ENABLE=y" >> $config_host_mak
+fi
+#AWH - TCG LLVM
+if test "$tcg_llvm" = "yes" ; then
+  echo "CONFIG_TCG_LLVM=y" >> $config_host_mak
+fi
+#AWH - TCG tainting
+if test "$tcg_taint" = "yes" ; then
+  echo "CONFIG_TCG_TAINT=y" >> $config_host_mak
+fi
+#AWH - TCG IR logging
+if test "$tcg_ir_log" = "yes" ; then
+  echo "CONFIG_TCG_IR_LOG=y" >> $config_host_mak
+fi
 
 echo "ARCH=$ARCH" >> $config_host_mak
 
@@ -6220,7 +6309,7 @@ mkdir -p $target_dir
 echo "# Automatically generated by configure - do not modify" > $config_target_mak
 
 bflt="no"
-mttcg="no"
+mttcg="yes"
 interp_prefix1=$(echo "$interp_prefix" | sed "s/%M/$target_name/g")
 gdb_xml_files=""
 
@@ -6628,3 +6717,11 @@ echo ' "$@"' >>config.status
 chmod +x config.status
 
 rm -r "$TMPDIR1"
+
+echo "Configuring Sleuthkit now! Please wait"
+cd ./shared/sleuthkit
+./bootstrap > /dev/null 2>&1
+#./configure --disable-java --enable-silent-rules --prefix=$PWD --with-libqcow=$libqcow > /dev/null 2>&1
+./configure --disable-java --enable-silent-rules --prefix=$PWD > /dev/null 2>&1
+cd ../..
+echo "DECAF configuration complete! Type 'make' to begin building."

@@ -32,6 +32,8 @@
 #include "exec/log.h"
 #include "exec/helper-proto.h"
 #include "qemu/atomic.h"
+#include "DECAF_main.h"
+#include "shared/DECAF_callback_to_QEMU.h"
 
 /* DEBUG defines, enable DEBUG_TLB_LOG to log to the CPU_LOG_MMU target */
 /* #define DEBUG_TLB */

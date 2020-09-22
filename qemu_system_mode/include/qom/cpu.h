@@ -143,7 +143,7 @@ typedef struct CPUClass {
     /*< public >*/
 
     ObjectClass *(*class_by_name)(const char *cpu_model);
-    void (*parse_features)(const char *typename, char *str, Error **errp);
+    void (*parse_features)(const char *_typename, char *str, Error **errp);
 
     void (*reset)(CPUState *cpu);
     int reset_dump_flags;
@@ -220,7 +220,7 @@ typedef struct CPUBreakpoint {
 } CPUBreakpoint;
 
 struct CPUWatchpoint {
-    vaddr vaddr;
+    vaddr _vaddr;
     vaddr len;
     vaddr hitaddr;
     MemTxAttrs hitattrs;
@@ -630,7 +630,7 @@ void cpu_reset(CPUState *cpu);
  *
  * Returns: A #CPUClass or %NULL if not matching class is found.
  */
-ObjectClass *cpu_class_by_name(const char *typename, const char *cpu_model);
+ObjectClass *cpu_class_by_name(const char *_typename, const char *cpu_model);
 
 /**
  * cpu_generic_init:
@@ -641,7 +641,7 @@ ObjectClass *cpu_class_by_name(const char *typename, const char *cpu_model);
  *
  * Returns: A #CPUState or %NULL if an error occurred.
  */
-CPUState *cpu_generic_init(const char *typename, const char *cpu_model);
+CPUState *cpu_generic_init(const char *_typename, const char *cpu_model);
 
 /**
  * cpu_has_work:

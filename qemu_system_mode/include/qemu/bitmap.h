@@ -232,9 +232,9 @@ static inline unsigned long *bitmap_zero_extend(unsigned long *old,
                                                 long old_nbits, long new_nbits)
 {
     long new_len = BITS_TO_LONGS(new_nbits) * sizeof(unsigned long);
-    unsigned long *new = g_realloc(old, new_len);
-    bitmap_clear(new, old_nbits, new_nbits - old_nbits);
-    return new;
+    unsigned long * pt  = g_realloc(old, new_len);
+    bitmap_clear(pt, old_nbits, new_nbits - old_nbits);
+    return pt;
 }
 
 #endif /* BITMAP_H */

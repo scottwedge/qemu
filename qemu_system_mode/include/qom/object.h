@@ -395,7 +395,7 @@ struct ObjectClass
 struct Object
 {
     /*< private >*/
-    ObjectClass *class;
+    ObjectClass * _class;
     ObjectFree *free;
     GHashTable *properties;
     uint32_t ref;
@@ -584,7 +584,7 @@ struct InterfaceClass
  *
  * Returns: The newly allocated and instantiated object.
  */
-Object *object_new(const char *typename);
+Object *object_new(const char * type_name);
 
 /**
  * object_new_with_props:
@@ -635,7 +635,7 @@ Object *object_new(const char *typename);
  *
  * Returns: The newly allocated, instantiated & initialized object.
  */
-Object *object_new_with_props(const char *typename,
+Object *object_new_with_props(const char * type_name,
                               Object *parent,
                               const char *id,
                               Error **errp,
@@ -651,7 +651,7 @@ Object *object_new_with_props(const char *typename,
  *
  * See object_new_with_props() for documentation.
  */
-Object *object_new_with_propv(const char *typename,
+Object *object_new_with_propv(const char *type_name,
                               Object *parent,
                               const char *id,
                               Error **errp,
@@ -724,7 +724,7 @@ int object_set_propv(Object *obj,
  * have already been allocated.  The returned object has a reference count of 1,
  * and will be finalized when the last reference is dropped.
  */
-void object_initialize(void *obj, size_t size, const char *typename);
+void object_initialize(void *obj, size_t size, const char *type_name);
 
 /**
  * object_dynamic_cast:
@@ -736,7 +736,7 @@ void object_initialize(void *obj, size_t size, const char *typename);
  *
  * Returns: This function returns @obj on success or #NULL on failure.
  */
-Object *object_dynamic_cast(Object *obj, const char *typename);
+Object *object_dynamic_cast(Object *obj, const char *type_name);
 
 /**
  * object_dynamic_cast_assert:
@@ -747,7 +747,7 @@ Object *object_dynamic_cast(Object *obj, const char *typename);
  * This function is not meant to be called directly, but only through
  * the wrapper macro OBJECT_CHECK.
  */
-Object *object_dynamic_cast_assert(Object *obj, const char *typename,
+Object *object_dynamic_cast_assert(Object *obj, const char *type_name,
                                    const char *file, int line, const char *func);
 
 /**
@@ -800,7 +800,7 @@ Type type_register(const TypeInfo *info);
  * the wrapper macros OBJECT_CLASS_CHECK and INTERFACE_CHECK.
  */
 ObjectClass *object_class_dynamic_cast_assert(ObjectClass *klass,
-                                              const char *typename,
+                                              const char *type_name,
                                               const char *file, int line,
                                               const char *func);
 
@@ -819,7 +819,7 @@ ObjectClass *object_class_dynamic_cast_assert(ObjectClass *klass,
  * it.  (FIXME: perhaps this can be detected at type definition time?)
  */
 ObjectClass *object_class_dynamic_cast(ObjectClass *klass,
-                                       const char *typename);
+                                       const char *type_name);
 
 /**
  * object_class_get_parent:
@@ -851,7 +851,7 @@ bool object_class_is_abstract(ObjectClass *klass);
  *
  * Returns: The class for @typename or %NULL if not found.
  */
-ObjectClass *object_class_by_name(const char *typename);
+ObjectClass *object_class_by_name(const char *type_name);
 
 void object_class_foreach(void (*fn)(ObjectClass *klass, void *opaque),
                           const char *implements_type, bool include_abstract,
@@ -1128,7 +1128,7 @@ uint64_t object_property_get_uint(Object *obj, const char *name,
  * an enum).
  */
 int object_property_get_enum(Object *obj, const char *name,
-                             const char *typename, Error **errp);
+                             const char *type_name, Error **errp);
 
 /**
  * object_property_get_uint16List:
@@ -1272,7 +1272,7 @@ Object *object_resolve_path(const char *path, bool *ambiguous);
  *
  * Returns: The matched object or NULL on path lookup failure.
  */
-Object *object_resolve_path_type(const char *path, const char *typename,
+Object *object_resolve_path_type(const char *path, const char *type_name,
                                  bool *ambiguous);
 
 /**
@@ -1414,14 +1414,14 @@ void object_class_property_add_bool(ObjectClass *klass, const char *name,
  * property of type '@typename'.
  */
 void object_property_add_enum(Object *obj, const char *name,
-                              const char *typename,
+                              const char *type_name,
                               const char * const *strings,
                               int (*get)(Object *, Error **),
                               void (*set)(Object *, int, Error **),
                               Error **errp);
 
 void object_class_property_add_enum(ObjectClass *klass, const char *name,
-                                    const char *typename,
+                                    const char *type_name,
                                     const char * const *strings,
                                     int (*get)(Object *, Error **),
                                     void (*set)(Object *, int, Error **),
@@ -1612,5 +1612,5 @@ Object *container_get(Object *root, const char *path);
  *
  * Returns the instance_size of the given @typename.
  */
-size_t object_type_get_instance_size(const char *typename);
+size_t object_type_get_instance_size(const char *type_name);
 #endif

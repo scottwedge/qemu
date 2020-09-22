@@ -368,7 +368,7 @@ static void object_initialize_with_type(void *data, size_t size, TypeImpl *type)
     g_assert_cmpint(size, >=, type->instance_size);
 
     memset(obj, 0, type->instance_size);
-    obj->class = type->class;
+    obj->_class = type->class;
     object_ref(obj);
     obj->properties = g_hash_table_new_full(g_str_hash, g_str_equal,
                                             NULL, object_property_free);
@@ -461,7 +461,7 @@ static void object_deinit(Object *obj, TypeImpl *type)
 static void object_finalize(void *data)
 {
     Object *obj = data;
-    TypeImpl *ti = obj->class->type;
+    TypeImpl *ti = obj->_class->type;
 
     object_property_del_all(obj);
     object_deinit(obj, ti);
@@ -611,7 +611,7 @@ Object *object_dynamic_cast(Object *obj, const char *typename)
 Object *object_dynamic_cast_assert(Object *obj, const char *typename,
                                    const char *file, int line, const char *func)
 {
-    trace_object_dynamic_cast_assert(obj ? obj->class->type->name : "(null)",
+    trace_object_dynamic_cast_assert(obj ? obj->_class->type->name : "(null)",
                                      typename, file, line, func);
 
 #ifdef CONFIG_QOM_CAST_DEBUG
@@ -619,7 +619,7 @@ Object *object_dynamic_cast_assert(Object *obj, const char *typename,
     Object *inst;
 
     for (i = 0; obj && i < OBJECT_CLASS_CAST_CACHE; i++) {
-        if (atomic_read(&obj->class->object_cast_cache[i]) == typename) {
+        if (atomic_read(&obj->_class->object_cast_cache[i]) == typename) {
             goto out;
         }
     }
@@ -636,10 +636,10 @@ Object *object_dynamic_cast_assert(Object *obj, const char *typename,
 
     if (obj && obj == inst) {
         for (i = 1; i < OBJECT_CLASS_CAST_CACHE; i++) {
-            atomic_set(&obj->class->object_cast_cache[i - 1],
-                       atomic_read(&obj->class->object_cast_cache[i]));
+            atomic_set(&obj->_class->object_cast_cache[i - 1],
+                       atomic_read(&obj->_class->object_cast_cache[i]));
         }
-        atomic_set(&obj->class->object_cast_cache[i - 1], typename);
+        atomic_set(&obj->_class->object_cast_cache[i - 1], typename);
     }
 
 out:
@@ -742,12 +742,12 @@ out:
 
 const char *object_get_typename(const Object *obj)
 {
-    return obj->class->type->name;
+    return obj->_class->type->name;
 }
 
 ObjectClass *object_get_class(Object *obj)
 {
-    return obj->class;
+    return obj->_class;
 }
 
 bool object_class_is_abstract(ObjectClass *klass)
@@ -1392,8 +1392,8 @@ static void object_finalize_child_property(Object *obj, const char *name,
 {
     Object *child = opaque;
 
-    if (child->class->unparent) {
-        (child->class->unparent)(child);
+    if (child->_class->unparent) {
+        (child->_class->unparent)(child);
     }
     child->parent = NULL;
     object_unref(child);

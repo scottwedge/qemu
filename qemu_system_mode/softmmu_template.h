@@ -44,7 +44,7 @@
 #else
 #error unsupported data size
 #endif
-
+#include "DECAF_callback_to_QEMU.h"
 
 /* For the benefit of TCG generated code, we want to avoid the complication
    of ABI-specific return type promotion and always return a value extended

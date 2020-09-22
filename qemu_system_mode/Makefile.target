@@ -7,13 +7,18 @@ include config-target.mak
 include config-devices.mak
 include $(SRC_PATH)/rules.mak
 
+TARGET_PATH=$(SRC_PATH)/target/$(TARGET_BASE_ARCH)
+
 $(call set-vpath, $(SRC_PATH):$(BUILD_DIR))
 ifdef CONFIG_LINUX
 QEMU_CFLAGS += -I../linux-headers
+QEMU_CXXFLAGS += -I../linux-headers
 endif
 QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target/$(TARGET_BASE_ARCH) -DNEED_CPU_H
+QEMU_CXXFLAGS += -I.. -I$(SRC_PATH)/target/$(TARGET_BASE_ARCH) -DNEED_CPU_H
 
 QEMU_CFLAGS+=-I$(SRC_PATH)/include
+QEMU_CXXLAGS+=-I$(SRC_PATH)/include
 
 ifdef CONFIG_USER_ONLY
 # user emulator name
@@ -100,6 +105,24 @@ obj-$(CONFIG_TCG_INTERPRETER) += disas/tci.o
 obj-y += fpu/softfloat.o
 obj-y += target/$(TARGET_BASE_ARCH)/
 obj-y += disas.o
+# AWH
+
+QEMU_CXXFLAGS+=-fPIC
+libdecaf-y=DECAF_callback.o DECAF_main.o DECAF_cmds.o
+libdecaf-y+=hookapi.o read_linux.o procmod.o  windows_vmi.o vmi.o vmi_c_wrapper.o
+libdecaf-y+=linux_procinfo.o linux_readelf.o linux_vmi_new.o
+libdecaf-y+=function_map.o
+libdecaf-y+=tainting/reduce_taint.o tainting/taintcheck_opt.o tainting/tainting.o
+libdecaf-y+=tainting/taint_memory.o tainting/tcg_taint.o 
+libdecaf-y+=DECAF_vm_compress.o
+libdecaf-y+=utils/HashtableWrapper.o
+libdecaf-y+=utils/Output.o
+libdecaf-y+=utils/SimpleCallback.o
+LIBDECAF = $(addprefix shared/, $(libdecaf-y))
+obj-y += $(LIBDECAF)
+obj-y += $(TARGET_PATH)/DECAF_target.o
+
+LIBS+=-ldl
 obj-$(call notempty,$(TARGET_XML_FILES)) += gdbstub-xml.o
 obj-$(call lnot,$(CONFIG_HAX)) += hax-stub.o
 
@@ -115,6 +138,10 @@ obj-$(CONFIG_LIBDECNUMBER) += libdecnumber/dpd/decimal128.o
 ifdef CONFIG_LINUX_USER
 
 QEMU_CFLAGS+=-I$(SRC_PATH)/linux-user/$(TARGET_ABI_DIR) \
+             -I$(SRC_PATH)/linux-user/host/$(ARCH) \
+             -I$(SRC_PATH)/linux-user
+
+QEMU_CXXFLAGS+=-I$(SRC_PATH)/linux-user/$(TARGET_ABI_DIR) \
              -I$(SRC_PATH)/linux-user/host/$(ARCH) \
              -I$(SRC_PATH)/linux-user
 
@@ -147,6 +174,7 @@ obj-y += memory_mapping.o
 obj-y += dump.o
 obj-y += migration/ram.o
 LIBS := $(libs_softmmu) $(LIBS)
+LIBS+=-lrt
 
 # Hardware support
 ifeq ($(TARGET_NAME), sparc64)
@@ -191,9 +219,14 @@ all-obj-$(CONFIG_USER_ONLY) += $(crypto-aes-obj-y)
 all-obj-$(CONFIG_SOFTMMU) += $(crypto-obj-y)
 all-obj-$(CONFIG_SOFTMMU) += $(io-obj-y)
 
+libdecaf.a: $(LIBDECAF)
+	rm -f $@
+	$(AR) rcs $@ $(LIBDECAF)
+
 $(QEMU_PROG_BUILD): config-devices.mak
 
 COMMON_LDADDS = ../libqemuutil.a ../libqemustub.a
+
 
 # build either PROG or PROGW
 $(QEMU_PROG_BUILD): $(all-obj-y) $(COMMON_LDADDS)

@@ -38,7 +38,7 @@
 #include "chardev/char-fe.h"
 #include "ui/qemu-spice.h"
 #include "sysemu/numa.h"
-#include "monitor/monitor.h"
+#include "monitor/monitor.h"// zyw
 #include "qemu/config-file.h"
 #include "qemu/readline.h"
 #include "ui/console.h"
@@ -84,6 +84,9 @@
 #include "hw/s390x/storage-attributes.h"
 #endif
 
+#include "shared/DECAF_main.h" // zyw
+#include "shared/DECAF_main_internal.h" // zyw
+
 /*
  * Supported types:
  *
@@ -118,19 +121,17 @@
  *
  */
 
+/* zyw
 typedef struct mon_cmd_t {
     const char *name;
     const char *args_type;
     const char *params;
     const char *help;
     void (*cmd)(Monitor *mon, const QDict *qdict);
-    /* @sub_table is a list of 2nd level of commands. If it does not exist,
-     * cmd should be used. If it exists, sub_table[?].cmd should be
-     * used, and cmd of 1st level plays the role of help function.
-     */
     struct mon_cmd_t *sub_table;
     void (*command_completion)(ReadLineState *rs, int nb_args, const char *str);
 } mon_cmd_t;
+*/
 
 /* file descriptors passed via SCM_RIGHTS */
 typedef struct mon_fd_t mon_fd_t;
@@ -2682,6 +2683,45 @@ static const mon_cmd_t *search_dispatch_table(const mon_cmd_t *disp_table,
     return NULL;
 }
 
+static const mon_cmd_t *monitor_find_command(const char *cmdname)
+{
+  const mon_cmd_t *cmd;
+  // AWH - search the standard monitor cmds first
+  cmd = search_dispatch_table(mon_cmds, cmdname);
+  if (cmd) return cmd;
+
+  //LOK: Now search the DECAF's default commands
+  if (DECAF_mon_cmds != NULL)
+  {
+    cmd = search_dispatch_table(DECAF_mon_cmds, cmdname);
+    if (cmd != NULL)
+    {
+      return cmd;
+    }
+  }
+  if (DECAF_info_cmds != NULL)
+  {
+    cmd = search_dispatch_table(DECAF_info_cmds, cmdname);
+    if (cmd != NULL)
+    {
+      return cmd;
+    }
+  }
+  // AWH - if you can't find it, try to search the plugin term cmds
+  if (decaf_plugin) {
+    if (decaf_plugin->mon_cmds) {
+      cmd = search_dispatch_table(decaf_plugin->mon_cmds, cmdname);
+      if (cmd) return cmd;
+    }
+    if (decaf_plugin->info_cmds) {
+      cmd = search_dispatch_table(decaf_plugin->info_cmds, cmdname);
+      if (cmd) return cmd;
+    } 
+  }
+
+  return NULL; // No plugin, no cmd found
+}
+
 /*
  * Parse command name from @cmdp according to command table @table.
  * If blank, return NULL.
@@ -2704,9 +2744,40 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
     p = get_command_name(*cmdp, cmdname, sizeof(cmdname));
     if (!p)
         return NULL;
-
     cmd = search_dispatch_table(table, cmdname);
+    int flag = 0;
     if (!cmd) {
+	  //LOK: Now search the DECAF's default commands
+	  if (DECAF_mon_cmds != NULL)
+	  {
+	    cmd = search_dispatch_table(DECAF_mon_cmds, cmdname);
+	    if (cmd)
+    	    {
+      		flag = 1;
+   	    }    	    
+	  }
+	  if (DECAF_info_cmds != NULL && flag == 0)
+	  {
+	    cmd = search_dispatch_table(DECAF_info_cmds, cmdname);
+	    if (cmd)
+    	    {
+      		flag = 1;
+   	    }
+	  }
+	  // AWH - if you can't find it, try to search the plugin term cmds
+	  if (decaf_plugin && flag == 0) {
+	    monitor_printf(mon, " decaf_plugin_cmd: %s\n",decaf_plugin->mon_cmds);
+	    if (decaf_plugin->mon_cmds) {
+	      cmd = search_dispatch_table(decaf_plugin->mon_cmds, cmdname);		
+	      if (cmd) flag = 1;
+	    }
+	    if (decaf_plugin->info_cmds && flag == 0) {
+	      cmd = search_dispatch_table(decaf_plugin->info_cmds, cmdname);
+	    } 
+	}   
+    }
+    if (!cmd)
+    {
         monitor_printf(mon, "unknown command: '%.*s'\n",
                        (int)(p - *cmdp), *cmdp);
         return NULL;
@@ -2719,10 +2790,13 @@ static const mon_cmd_t *monitor_parse_command(Monitor *mon,
 
     *cmdp = p;
     /* search sub command */
+    /* zyw
     if (cmd->sub_table != NULL && *p != '\0') {
+	monitor_printf(mon, " command: %s\n",cmd->sub_table);
         return monitor_parse_command(mon, cmdp, cmd->sub_table);
     }
-
+    */
+    monitor_printf(mon, " command: %s\n",cmd->name);
     return cmd;
 }
 
@@ -3084,6 +3158,8 @@ static QDict *monitor_parse_arguments(Monitor *mon,
     while (qemu_isspace(*p))
         p++;
     if (*p != '\0') {
+	monitor_printf(mon, "%c: character\n",
+                       *p);
         monitor_printf(mon, "%s: extraneous characters at the end of line\n",
                        cmd->name);
         goto fail;
@@ -3103,21 +3179,23 @@ static void handle_hmp_command(Monitor *mon, const char *cmdline)
     const mon_cmd_t *cmd;
 
     trace_handle_hmp_command(mon, cmdline);
-
     cmd = monitor_parse_command(mon, &cmdline, mon->cmd_table);
+    //monitor_printf(mon, "inter, %s\n", cmdline);
     if (!cmd) {
         return;
     }
-
     qdict = monitor_parse_arguments(mon, &cmdline, cmd);
+    //monitor_printf(mon, "inter, %s\n", cmdline);
     if (!qdict) {
         monitor_printf(mon, "Try \"help %s\" for more information\n",
                        cmd->name);
         return;
     }
-
+    //monitor_printf(mon, "inter0, %s\n", qdict);
     cmd->cmd(mon, qdict);
+    //monitor_printf(mon, "inter1, %s\n", cmdline);
     QDECREF(qdict);
+    //monitor_printf(mon, "inter2, %s\n", cmdline);
 }
 
 static void cmd_completion(Monitor *mon, const char *name, const char *list)
@@ -3717,6 +3795,20 @@ static void monitor_find_completion_by_table(Monitor *mon,
         for (cmd = cmd_table; cmd->name != NULL; cmd++) {
             cmd_completion(mon, cmdname, cmd->name);
         }
+	//zyw
+	if (DECAF_mon_cmds != NULL)
+        {
+            for (cmd = DECAF_mon_cmds; cmd->name != NULL; cmd++)
+            {
+                cmd_completion(mon, cmdname, cmd->name);
+            }
+	}
+	if (decaf_plugin && decaf_plugin->mon_cmds)
+            for (cmd = decaf_plugin->mon_cmds; cmd->name != NULL; cmd++)
+		cmd_completion(mon, cmdname, cmd->name);
+
+	//zyw end
+
     } else {
         /* find the command */
         for (cmd = cmd_table; cmd->name != NULL; cmd++) {
@@ -3724,6 +3816,30 @@ static void monitor_find_completion_by_table(Monitor *mon,
                 break;
             }
         }
+	
+	//zyw
+	if ((cmd->name == NULL) && (DECAF_mon_cmds != NULL))
+        {
+          for (cmd = DECAF_mon_cmds; cmd->name != NULL; cmd++)
+          {
+            if (compare_cmd(args[0], cmd->name))
+            {
+              break;
+            }
+          }
+        }
+
+        // AWH - plugin cmds
+        if (!cmd->name && decaf_plugin && decaf_plugin->mon_cmds)
+            for (cmd = decaf_plugin->mon_cmds; cmd->name != NULL; cmd++)
+                if (compare_cmd(args[0], cmd->name)) break;
+        //if (!cmd->name && temu_plugin && temu_plugin->info_cmds) {
+        //    for (cmd = temu_plugin->term_cmds; cmd->name != NULL; cmd++) 
+        //        if (compare_cmd(args[0], cmd->name)) break;
+	//}
+	
+	//zyw end
+
         if (!cmd->name) {
             return;
         }

@@ -56,6 +56,8 @@
 #error unsupported data size
 #endif
 
+#include "DECAF_callback_to_QEMU.h"
+
 #if DATA_SIZE == 8
 #define RES_TYPE uint64_t
 #else

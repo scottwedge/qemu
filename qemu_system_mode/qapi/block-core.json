@@ -3005,7 +3005,7 @@
 #
 # @server:      NBD server address
 #
-# @export:      export name
+# @var_export:      export name
 #
 # @tls-creds:   TLS credentials ID
 #
@@ -3013,7 +3013,7 @@
 ##
 { 'struct': 'BlockdevOptionsNbd',
   'data': { 'server': 'SocketAddress',
-            '*export': 'str',
+            '*var_export': 'str',
             '*tls-creds': 'str' } }
 
 ##

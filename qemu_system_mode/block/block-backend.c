@@ -22,6 +22,17 @@
 #include "trace.h"
 #include "migration/misc.h"
 
+#include "DECAF_main_internal.h"
+#include "shared/sleuthkit/tsk/base/tsk_base.h" //ZYW
+#include "shared/sleuthkit/tsk/img/tsk_img.h" //zyw
+#include "shared/sleuthkit/tsk/img/raw.h" //zyw
+#include "shared/sleuthkit/tsk/vs/tsk_vs.h" //zyw
+#include "shared/sleuthkit/tsk/fs/tsk_fs.h" //zyw
+#include "shared/DECAF_fileio.h" //zyw
+
+static int devices=0; //zyw
+disk_info_t disk_info_internal[5];
+
 /* Number of coroutines to reserve per attached device model */
 #define COROUTINE_POOL_RESERVATION 64
 
@@ -2036,3 +2047,87 @@ static void blk_root_drained_end(BdrvChild *child)
         }
     }
 }
+
+void DECAF_blocks_init()
+{
+	BlockDriverState *dState;
+	int index = 0;
+	BlockDriverState *bs, *next_bs;
+
+	BlockBackend *blk;
+    	QTAILQ_FOREACH(blk, &block_backends, link) {
+        //if (dinfo->type == IF_DEFAULT || dinfo->type == IF_SCSI || dinfo->type == IF_IDE ) {
+		printf("blockdriver:%x\n", blk_bs(blk));
+		printf("%d,%s\n", index,blk->name);
+		if (index == 0){
+						
+			DECAF_bdrv_open(index,(void *)blk);	
+		}
+		++index; 
+		
+        //}
+    	}	
+}
+
+
+
+// AVB, This function is used to read 'n' bytes off the disk images give by `opaque' 
+// at an offset
+int DECAF_bdrv_pread(void *opaque, int64_t offset, void *buf, int count) {
+	
+	printf("DECAF_bdrv_pread:%x\n", opaque);
+	//return bdrv_pread((BlockDriverState *)opaque, offset, buf, count);
+	return bdrv_pread((BdrvChild *)opaque, offset, buf, count);
+
+}
+
+
+// AVB, This function is used to open the disk on sleuthkit by calling `tsk_fs_open_img'.
+
+void DECAF_bdrv_open(int index, void *opaque) {
+  BlockDriverState * state = blk_bs((BlockBackend *)opaque);
+  BdrvChild * child = ((BlockBackend *)opaque)->root;
+  FILE *fp = fopen("decaf_bdrv_open","a+");
+  printf("addr is %x\n", opaque);
+  TSK_FS_INFO *fs=NULL;
+  TSK_OFF_T a_offset = 0;
+  unsigned long img_size = state->total_sectors * 512;
+  if(!qemu_pread)
+	  qemu_pread=(qemu_pread_t)DECAF_bdrv_pread;
+
+  //monitor_printf(default_mon, "inside bdrv open, drv addr= 0x%0x, size= %lu\n", opaque, img_size);
+  fprintf(fp, "inside bdrv open, drv addr= 0x%0x, size= %lu\n", opaque, img_size);
+  printf("inside bdrv open, drv addr= 0x%0x, size= %lu\n", opaque, img_size);
+  disk_info_internal[devices].bs = opaque;
+  disk_info_internal[devices].img = tsk_img_open(1, (const char **) &child, QEMU_IMG, 0);
+  printf("inside bdrv open, drv char= %s, size= %lu\n",disk_info_internal[devices].img, img_size);
+  disk_info_internal[devices].img->size = img_size;
+  printf("inside bdrv open, drv addr= %x, filename= %s\n", ((IMG_QEMU_INFO *)(disk_info_internal[devices].img))->opaque, ((BlockDriverState *)opaque)->filename);	
+
+  if (disk_info_internal[devices].img==NULL)
+  {
+    //monitor_printf(default_mon, "img_open error! \n",opaque);
+    fprintf(fp, "img_open error!\n");
+    printf("img_open error!\n");	
+  }
+  printf("img_open done:%x\n", disk_info_internal[devices]);	
+  // TODO: AVB, also add an option of 56 as offset with sector size of 4k, Sector size is now assumed to be 512 by default
+  if(!(disk_info_internal[devices].fs = tsk_fs_open_img(disk_info_internal[devices].img, 0 ,TSK_FS_TYPE_EXT_DETECT)) &&
+  	    !(disk_info_internal[devices].fs = tsk_fs_open_img(disk_info_internal[devices].img, 63 * (disk_info_internal[devices].img)->sector_size, TSK_FS_TYPE_EXT_DETECT)) &&
+  	    	!(disk_info_internal[devices].fs = tsk_fs_open_img(disk_info_internal[devices].img, 2048 * (disk_info_internal[devices].img)->sector_size , TSK_FS_TYPE_EXT_DETECT)) )
+  {
+	//monitor_printf(default_mon, "fs_open error! \n",opaque);
+	fprintf(fp, "s_open error!\n");
+	printf("s_open error!\n");
+  }	
+  else
+  {
+  	//monitor_printf(default_mon, "fs_open = %s \n",(disk_info_internal[devices].fs)->duname);
+	fprintf(fp, "fs_open = %s \n",(disk_info_internal[devices].fs)->duname);
+	printf("fs_open = %s \n",(disk_info_internal[devices].fs)->duname);
+  }
+  fclose(fp);
+  ++devices;
+}
+
+

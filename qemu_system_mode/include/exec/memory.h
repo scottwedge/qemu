@@ -289,9 +289,9 @@ struct MemoryListener {
     void (*region_del)(MemoryListener *listener, MemoryRegionSection *section);
     void (*region_nop)(MemoryListener *listener, MemoryRegionSection *section);
     void (*log_start)(MemoryListener *listener, MemoryRegionSection *section,
-                      int old, int new);
+                      int old, int new_para);
     void (*log_stop)(MemoryListener *listener, MemoryRegionSection *section,
-                     int old, int new);
+                     int old, int new_para);
     void (*log_sync)(MemoryListener *listener, MemoryRegionSection *section);
     void (*log_global_start)(MemoryListener *listener);
     void (*log_global_stop)(MemoryListener *listener);
@@ -842,7 +842,7 @@ static inline IOMMUMemoryRegion *memory_region_get_iommu(MemoryRegion *mr)
 static inline IOMMUMemoryRegionClass *memory_region_get_iommu_class_nocheck(
         IOMMUMemoryRegion *iommu_mr)
 {
-    return (IOMMUMemoryRegionClass *) (((Object *)iommu_mr)->class);
+    return (IOMMUMemoryRegionClass *) (((Object *)iommu_mr)->_class);
 }
 
 #define memory_region_is_iommu(mr) (memory_region_get_iommu(mr) != NULL)

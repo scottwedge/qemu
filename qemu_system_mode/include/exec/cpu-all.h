@@ -216,8 +216,11 @@ void address_space_stq_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t va
 #ifdef TARGET_PAGE_BITS_VARY
 extern bool target_page_bits_decided;
 extern int target_page_bits;
+#define TARGET_PAGE_BITS 13
+/**
 #define TARGET_PAGE_BITS ({ assert(target_page_bits_decided); \
                             target_page_bits; })
+*/
 #else
 #define TARGET_PAGE_BITS_MIN TARGET_PAGE_BITS
 #endif

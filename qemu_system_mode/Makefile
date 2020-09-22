@@ -11,7 +11,7 @@ UNCHECKED_GOALS := %clean TAGS cscope ctags docker docker-%
 # All following code might depend on configuration variables
 ifneq ($(wildcard config-host.mak),)
 # Put the all: rule here so that config-host.mak can contain dependencies.
-all:
+all: sleuthkit
 include config-host.mak
 
 # Check that we're not trying to do an out-of-tree build from
@@ -196,8 +196,10 @@ trace-dtrace-root.o: trace-dtrace-root.dtrace
 Makefile: ;
 configure: ;
 
+.NOTPARALLEL: sleuthkit
+
 .PHONY: all clean cscope distclean html info install install-doc \
-	pdf txt recurse-all speed test dist msi FORCE
+	pdf txt recurse-all speed test dist msi FORCE sleuthkit
 
 $(call set-vpath, $(SRC_PATH))
 
@@ -215,6 +217,15 @@ endif
 else
 DOCS=
 endif
+
+SLEUTHKIT_LIB=$(SRC_PATH)/shared/sleuthkit/lib/libtsk.a
+SLEUTHKIT_SHARED_LIB=$(SRC_PATH)/shared/sleuthkit/lib/libtsk.so
+sleuthkit: $(SLEUTHKIT_SHARED_LIB)
+
+$(SLEUTHKIT_SHARED_LIB):
+	@echo "Building Sleuthkit, please wait..."
+	$(call quiet-command,$(MAKE) -j32 -C ./shared/sleuthkit > /dev/null 2>&1,"  GEN   Sleuthkit")
+	$(call quiet-command,$(MAKE) -C ./shared/sleuthkit install > /dev/null 2>&1,"  PREP  Sleuthkit headers/libs")
 
 SUBDIR_MAKEFLAGS=$(if $(V),,--no-print-directory) BUILD_DIR=$(BUILD_DIR)
 SUBDIR_DEVICES_MAK=$(patsubst %, %/config-devices.mak, $(TARGET_DIRS))
@@ -283,7 +294,7 @@ dummy := $(call unnest-vars,, \
 
 include $(SRC_PATH)/tests/Makefile.include
 
-all: $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all modules
+all: sleuthkit $(DOCS) $(TOOLS) $(HELPERS-y) recurse-all modules
 
 qemu-version.h: FORCE
 	$(call quiet-command, \
@@ -490,6 +501,7 @@ clean:
 	find . \( -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
 	rm -f $(filter-out %.tlb,$(TOOLS)) $(HELPERS-y) qemu-ga TAGS cscope.* *.pod *~ */*~
 	rm -f fsdev/*.pod
+	rm -f shared/*.d shared/*.o shared/hooks/*.d shared/hooks/*.o
 	rm -f qemu-img-cmds.h
 	rm -f ui/shader/*-vert.h ui/shader/*-frag.h
 	@# May not be present in GENERATED_FILES
@@ -531,6 +543,11 @@ distclean: clean
 	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \
         done
+	rm -rf $(SLEUTHKIT_LIB)
+	$(call quiet-command,$(MAKE) -C ./shared/sleuthkit uninstall > /dev/null 2>&1,"  UNINSTALL   Sleuthkit")
+	$(call quiet-command,$(MAKE) -C ./shared/sleuthkit distclean > /dev/null 2>&1,"  DISTCLEAN   Sleuthkit")
+
+
 	rm -Rf .sdk
 	if test -f pixman/config.log; then $(MAKE) -C pixman distclean; fi
 	if test -f dtc/version_gen.h; then $(MAKE) $(DTC_MAKE_ARGS) clean; fi
